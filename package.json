@@ -1,0 +1,15 @@
+{
+  "name": "cubeviz",
+  "version": "0.0.1",
+  "description": "Visualisation de données en cube",
+  "author": "Ahynn Kryzaal <kryzaal@gmail.com>",
+  "main": "lib/server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kryzaal/cubeviz.git"
+  },
+  "dependencies": {
+    "express": "*",
+    "coffee-script": "*"
+  }
+}
