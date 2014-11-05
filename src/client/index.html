@@ -1,3 +1,47 @@
 <!DOCTYPE html>
 <html>
+	<head>
+		<title id="title">CubeViz</title>
+		<style type="text/css">
+			* { margin: 0; overflow: hidden;}
+			canvas { width: 100%; height: 100%; }
+			h1 { color: white; position: absolute; top: 0;}
+		</style>
+	</head>
+	<body>
+		<h1 id="main"></h1>
+		<aside id="aside"></aside>
+		<canvas id="canvas"></canvas>
+
+		<script src="data.js"></script>
+		<script id="vertexShader" type="x-shader/x-vertex">
+		    uniform vec3 viewVector;
+		    uniform float c;
+		    uniform float p;
+		    varying float intensity;
+		    void main() 
+		    {
+		        vec3 vNormal = normalize( normalMatrix * normal );
+		        vec3 vNormel = normalize( normalMatrix * viewVector );
+		        intensity = pow( c - dot(vNormal, vNormel), p );
+
+		        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		    }
+	    </script>
+
+	    <script id="fragmentShader" type="x-shader/x-vertex"> 
+		    uniform vec3 glowColor;
+		    varying float intensity;
+		    void main() 
+		    {
+		        vec3 glow = glowColor * intensity;
+		        gl_FragColor = vec4( glow, 1.0 );
+		    }
+		</script>
+
+		<script src="three.min.js"></script>
+		<script src="orbitcontrols.js"></script>
+
+		<script src="cubeviz.js"></script>
+	</body>
 </html>
