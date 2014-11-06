@@ -1,15 +1,16 @@
 initCamera = () ->
-	camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 500 )
+	camera = new THREE.PerspectiveCamera( 75, (window.innerWidth * 0.7) / window.innerHeight, 1, 500 )
 	camera.position.z = 20
+	camera.name = "camera"
 	scene.add(camera)
 	camera
 
 initRenderer = () ->
 	renderer = new THREE.WebGLRenderer({ 
 		antialias: true
-		canvas: document.getElementById("canvas")
+		canvas: window.canvas
 	})
-	renderer.setSize( window.innerWidth, window.innerHeight )
+	renderer.setSize( window.innerWidth * 0.7, window.innerHeight )
 	renderer.setClearColor(new THREE.Color("#000000"))
 	renderer
 
@@ -55,6 +56,7 @@ initGlow = () ->
     })
 
 	glowMesh = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.05, 1.05), glowMaterial)
+	glowMesh.name = "glow"
 	window.scene.add(glowMesh)
 	glowMesh
 
@@ -69,8 +71,10 @@ initVoxels = (data) ->
 		mesh.position.x = entry.x * (1 + burstFactor)
 		mesh.position.y = entry.y * (1 + burstFactor)
 		mesh.position.z = entry.z * (1 + burstFactor)
+		mesh.name = entry.x + '-' + entry.y + '-' + entry.z
 
 		voxel = {
+			data: entry.data
 			x: entry.x
 			y: entry.y
 			z: entry.z
@@ -81,7 +85,7 @@ initVoxels = (data) ->
 		}
 
 		voxels.push(voxel)
-		window.meshToVoxels[mesh.uuid] = voxel
+		window.meshToVoxels[mesh.name] = voxel
 
 		window.scene.add(mesh)
 
@@ -113,14 +117,14 @@ drawVoxel = (voxel) ->
 		scene.add(mesh)
 
 onWindowResize = () ->
-	window.camera.aspect = window.innerWidth / window.innerHeight
+	window.camera.aspect = (window.innerWidth * 0.7) / window.innerHeight
 	window.camera.updateProjectionMatrix()
-	window.renderer.setSize( window.innerWidth, window.innerHeight )
+	window.renderer.setSize( window.innerWidth * 0.7, window.innerHeight )
 	render()
 
 getIntersected = (e) ->
-	mouse_x = ( e.clientX / window.innerWidth ) * 2 - 1
-	mouse_y = - ( e.clientY / window.innerHeight ) * 2 + 1
+	mouse_x = ( e.clientX / window.canvas.width ) * 2 - 1
+	mouse_y = - ( e.clientY / window.canvas.height ) * 2 + 1
 
 	window.mouse_vector.set(mouse_x, mouse_y, 0.5)
 	window.projector.unprojectVector( window.mouse_vector, window.camera )
@@ -129,10 +133,13 @@ getIntersected = (e) ->
 	window.ray.intersectObjects(window.scene.children)
 
 displayData = (mesh) ->
-	voxel = window.meshToVoxels[mesh.uuid]
-	alert(voxel.r + " " + voxel.v + " " + voxel.b + " ")
+	voxel = window.meshToVoxels[mesh.name]
+	document.getElementById("color").style.backgroundColor = "rgb(#{voxel.r}, #{voxel.v}, #{voxel.b})";
+	window.aside.innerHTML = metadata.display(axis, voxel.data.x, voxel.data.y, voxel.data.z, voxel.data.r, voxel.data.v, voxel.data.b)
 
 hideData = () ->
+	window.aside.innerHTML = "(Aucune donnée)"
+
 
 window.previousKnownMousePos = {clientX: 0, clientY: 0}
 onMouseMove = (e) ->
@@ -152,7 +159,7 @@ onMouseClick = (e) ->
 	intersects = getIntersected(e)
 
 	if intersects.length
-		displayData intersects[0].object
+		displayData intersects[1].object
 	else
 		hideData
 
@@ -160,8 +167,8 @@ onMouseWheel = (e) ->
 	window.controls.update()
 
 initRaycasting = () ->
-	renderer.domElement.addEventListener("mousemove", onMouseMove)
-	renderer.domElement.addEventListener("dblclick", onMouseClick)
+	window.canvas.addEventListener("mousemove", onMouseMove)
+	window.canvas.addEventListener("dblclick", onMouseClick)
 	new THREE.Raycaster(new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0))
 
 parseData = (data, axis) ->
@@ -204,6 +211,14 @@ parseData = (data, axis) ->
 		b = entry[axis.b] if axis.b != null
 
 		output.push({
+			data: {
+				x: entry[axis.x]
+				y: entry[axis.y]
+				z: entry[axis.z]
+				r: entry[axis.r]
+				v: entry[axis.v]
+				b: entry[axis.b]
+			}
 			x: x_axis_translation[entry[axis.x]]
 			y: y_axis_translation[entry[axis.y]]
 			z: z_axis_translation[entry[axis.z]]
@@ -217,6 +232,8 @@ parseData = (data, axis) ->
 document.getElementById("title").innerHTML = window.metadata.title
 document.getElementById("main").innerHTML = window.metadata.title
 
+window.canvas = document.getElementById("canvas")
+window.aside = document.getElementById('aside')
 window.burstFactor = 0.3
 window.meshToVoxels = {}
 window.scene = new THREE.Scene()

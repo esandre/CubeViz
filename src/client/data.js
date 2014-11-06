@@ -1,13 +1,26 @@
 window.metadata = {
-  title: "Statistiques des commits"
+  title: "Statistiques des commits",
+  display: function(axis, x, y, z, r, v, b) {
+    return "" +
+      "<dl>" +
+        "<dt>" + axis.x + ":</dt>" +
+        "<dd>" + x + "</dd>" +
+        "<dt>" + axis.y + ":</dt>" +
+        "<dd>" + y + "</dd>" +
+        "<dt>" + axis.z + ":</dt>" +
+        "<dd>" + z + "</dd>" +
+        "<dt>" + axis.r + ":</dt>" +
+        "<dd>" + r + "</dd>" +
+      "</dl>";
+  }
 }
 
 window.axis = {
   x: "Developpeur",
   y: "Jour",
   z: "Projet",
-  r: "Commits",
-  v: null,
+  r: null,
+  v: "Commits",
   b: "Commits"
 }
 
