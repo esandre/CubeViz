@@ -1,66 +1,24 @@
-initCamera = () ->
-	camera = new THREE.PerspectiveCamera( 75, (window.innerWidth * 0.7) / window.innerHeight, 1, 500 )
-	camera.position.z = 20
-	camera.name = "camera"
-	scene.add(camera)
-	camera
-
-initRenderer = () ->
-	renderer = new THREE.WebGLRenderer({ 
-		antialias: true
-		canvas: window.canvas
-	})
-	renderer.setSize( window.innerWidth * 0.7, window.innerHeight )
-	renderer.setClearColor(new THREE.Color("#000000"))
-	renderer
-
-initLights = () ->
-	light = new THREE.PointLight(0xffffff, 1, 200)
-	window.camera.add(light)
-	light.position.set(50, 0, 10)
-
-	light = new THREE.PointLight(0xffffff, 1, 200)
-	window.camera.add(light)
-	light.position.set(0, 50, 10)
-
-	light = new THREE.PointLight(0xffffff, 1, 200)
-	window.camera.add(light)
-	light.position.set(0, 0, 60)
-
-	light = new THREE.AmbientLight(0x111111)
-	scene.add(light)
-
 initControls = () ->
-	window.addEventListener('DOMMouseScroll', onMouseWheel, false)
-	window.addEventListener('mousewheel', onMouseWheel, false)
-	window.addEventListener('resize', onWindowResize, false)
+	window.addEventListener('DOMMouseScroll', onMouseWheel, true)
+	window.addEventListener('resize', render, false)
+	window.addEventListener("mousemove", onMouseMove, false)
+	window.addEventListener("dblclick", onMouseClick, false)
 	new THREE.OrbitControls( window.camera )
 
-initGlow = () ->
-	glowUniforms = 
-	{ 
-        "c":   { type: "f", value: 0.3 }
-        "p":   { type: "f", value: 0.5 }
-        glowColor: { type: "c", value: new THREE.Color(0xffff00) }
-        viewVector: { type: "v3", value: window.camera.position }
-    }
-
-	glowMaterial = new THREE.ShaderMaterial( 
-    {
-        uniforms: glowUniforms
-        vertexShader:   document.getElementById( 'vertexShader'   ).textContent
-        fragmentShader: document.getElementById( 'fragmentShader' ).textContent
-        side: THREE.FrontSide
-        blending: THREE.AdditiveBlending
-        transparent: true
-    })
-
-	glowMesh = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.05, 1.05), glowMaterial)
-	glowMesh.name = "glow"
-	window.scene.add(glowMesh)
-	glowMesh
-
 initVoxels = (data) ->
+	maxX = 0
+	maxY = 0
+	maxZ = 0
+
+	for entry in data
+		maxX = entry.x if entry.x > maxX
+		maxY = entry.y if entry.y > maxY
+		maxZ = entry.z if entry.z > maxZ
+
+	maxX = (maxX + ((maxX - 1) * burstFactor)) / 2
+	maxY = (maxY + ((maxY - 1) * burstFactor)) / 2
+	maxZ = (maxZ + ((maxZ - 1) * burstFactor)) / 2
+
 	voxels = []
 	for entry in data
 		material = new THREE.MeshPhongMaterial({
@@ -68,9 +26,9 @@ initVoxels = (data) ->
 		})
 
 		mesh = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), material )
-		mesh.position.x = entry.x * (1 + burstFactor)
-		mesh.position.y = entry.y * (1 + burstFactor)
-		mesh.position.z = entry.z * (1 + burstFactor)
+		mesh.position.x = entry.x * (1 + burstFactor) - maxX
+		mesh.position.y = entry.y * (1 + burstFactor) - maxY
+		mesh.position.z = entry.z * (1 + burstFactor) - maxZ
 		mesh.name = entry.x + '-' + entry.y + '-' + entry.z
 
 		voxel = {
@@ -91,6 +49,7 @@ initVoxels = (data) ->
 
 	voxels
 
+window.renderLock = false
 render = () ->
 	if !window.renderLock
 		window.renderLock = true
@@ -102,12 +61,6 @@ render = () ->
 		window.renderLock = false
 		requestAnimationFrame(render)
 
-makeGlow = (voxelMesh) ->
-	window.voxelGlow.position.set(voxelMesh.position.x, voxelMesh.position.y, voxelMesh.position.z)
-
-stopGlow = () ->
-	window.voxelGlow.position.set(-500, -500, -500)
-
 drawVoxel = (voxel) ->
 	mesh = voxel.mesh
 	distance = mesh.position.distanceTo(window.camera.position)
@@ -116,31 +69,6 @@ drawVoxel = (voxel) ->
 	else
 		scene.add(mesh)
 
-onWindowResize = () ->
-	window.camera.aspect = (window.innerWidth * 0.7) / window.innerHeight
-	window.camera.updateProjectionMatrix()
-	window.renderer.setSize( window.innerWidth * 0.7, window.innerHeight )
-	render()
-
-getIntersected = (e) ->
-	mouse_x = ( e.clientX / window.canvas.width ) * 2 - 1
-	mouse_y = - ( e.clientY / window.canvas.height ) * 2 + 1
-
-	window.mouse_vector.set(mouse_x, mouse_y, 0.5)
-	window.projector.unprojectVector( window.mouse_vector, window.camera )
-
-	window.ray.set( window.camera.position, window.mouse_vector.sub( window.camera.position ).normalize())
-	window.ray.intersectObjects(window.scene.children)
-
-displayData = (mesh) ->
-	voxel = window.meshToVoxels[mesh.name]
-	document.getElementById("color").style.backgroundColor = "rgb(#{voxel.r}, #{voxel.v}, #{voxel.b})";
-	window.aside.innerHTML = metadata.display(axis, voxel.data.x, voxel.data.y, voxel.data.z, voxel.data.r, voxel.data.v, voxel.data.b)
-
-hideData = () ->
-	window.aside.innerHTML = "(Aucune donnée)"
-
-
 window.previousKnownMousePos = {clientX: 0, clientY: 0}
 onMouseMove = (e) ->
 	if e == null 
@@ -148,28 +76,30 @@ onMouseMove = (e) ->
 	else 
 		window.previousKnownMousePos = e
 
-	intersects = getIntersected(e)
+	intersects = raycaster.getIntersected(e)
 
 	if intersects.length
-		makeGlow intersects[0].object
+		window.voxelGlow.glowAt(intersects[0].object.position)
 	else
-		stopGlow
+		window.voxelGlow.stopGlow()
 
 onMouseClick = (e) ->
-	intersects = getIntersected(e)
+	window.voxelGlow.stopGlow()
+	intersects = raycaster.getIntersected(e)
 
 	if intersects.length
-		displayData intersects[1].object
-	else
-		hideData
+		voxel = window.meshToVoxels[intersects[0].object.name]
+		dataDisplay.display(voxel)
+		window.voxelGlow.glowAt(intersects[0].object.position)
 
+window.suspendTimer = null
 onMouseWheel = (e) ->
-	window.controls.update()
+	clearTimeout(suspendTimer) if suspendTimer?
+	window.voxelGlow.pauseGlow()
+	window.voxelGlow.stopGlow()
 
-initRaycasting = () ->
-	window.canvas.addEventListener("mousemove", onMouseMove)
-	window.canvas.addEventListener("dblclick", onMouseClick)
-	new THREE.Raycaster(new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0))
+	suspendTimer = window.setTimeout(window.voxelGlow.resumeGlow, 100)
+	window.controls.update()
 
 parseData = (data, axis) ->
 	_x = _y = _z = 0
@@ -229,24 +159,24 @@ parseData = (data, axis) ->
 
 	output
 
-document.getElementById("title").innerHTML = window.metadata.title
-document.getElementById("main").innerHTML = window.metadata.title
+init = () ->
+	window.burstFactor = 0.3
+	window.meshToVoxels = {}
 
-window.canvas = document.getElementById("canvas")
-window.aside = document.getElementById('aside')
-window.burstFactor = 0.3
-window.meshToVoxels = {}
-window.scene = new THREE.Scene()
-window.camera = initCamera()
-window.voxelGlow = initGlow()
-window.controls = initControls()
-window.renderer = initRenderer()
-window.voxels = initVoxels(parseData(window.data, window.axis))
-window.projector = new THREE.Projector()
-window.mouse_vector = new THREE.Vector3()
-window.ray = initRaycasting()
-window.renderLock = false
-initLights()
-initRaycasting()
+	window.scene = new Scene().scene
+	window.canvas = new Canvas("canvas").domElement
+	window.camera = new Camera(window.scene).camera
+	window.renderer = new Renderer(window.canvas, window.scene).renderer
+	window.raycaster = new Raycaster(scene, canvas, camera)
+	window.dataDisplay = new DataDisplay(window.metadata, window.axis)
 
-render()
+	window.voxelGlow = new VoxelGlow(window.camera, window.scene)
+	window.addEventListener('mousedown', window.voxelGlow.pauseGlow, false)
+	window.addEventListener('mouseup', window.voxelGlow.resumeGlow, false)
+
+	window.controls = initControls()
+	window.voxels = initVoxels(parseData(window.data, window.axis))
+
+	render()
+
+window.addEventListener("load", init)

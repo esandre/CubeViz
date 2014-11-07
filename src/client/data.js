@@ -9,8 +9,8 @@ window.metadata = {
         "<dd>" + y + "</dd>" +
         "<dt>" + axis.z + ":</dt>" +
         "<dd>" + z + "</dd>" +
-        "<dt>" + axis.r + ":</dt>" +
-        "<dd>" + r + "</dd>" +
+        "<dt>" + axis.v + ":</dt>" +
+        "<dd>" + v + "</dd>" +
       "</dl>";
   }
 }

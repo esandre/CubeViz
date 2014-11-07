@@ -2,58 +2,14 @@
 <html>
 	<head>
 		<title id="title">CubeViz</title>
-		<style type="text/css">
-			* { 
-				margin: 0; 
-				overflow: hidden; 
-				background-color: black; 
-			}
-
-			aside { 
-				width: 29%; 
-				height: 100%;
-				min-height: 1000px;
-				float: right;
-				color: white;
-				display: inline-block;
-			}
-
-			aside #color { 
-				border: 1px solid white;
-				width: 200px;
-				height: 200px;
-				display: inline-block;
-				margin: auto;
-			}
-
-			canvas { 
-				width: 70%; 
-				height: 100%; 
-				float: left; 
-				border-right: 1px solid white; 
-			}
-
-			h1 { 
-				color: white; 
-				position: absolute; 
-				top: 0; 
-			}
-
-			dt {
-				float: left;
-				padding-right: 7px;
-				font-weight: bold;
-			}
-		</style>
+		<link rel="stylesheet" href="style.css" />
 	</head>
 	<body>
-		<h1 id="main"></h1>
+		<h1 id="main">CubeViz</h1>
 		<aside>
 			<h2>Détails</h1>
 			<div id="color"></div>
-			<div id="aside">
-				
-			</div>
+			<div id="aside"></div>
 		</aside>
 		<canvas id="canvas"></canvas>
 
@@ -86,6 +42,13 @@
 		<script src="three.min.js"></script>
 		<script src="orbitcontrols.js"></script>
 
+		<script src="cubeviz/canvas.js"></script>
+		<script src="cubeviz/camera.js"></script>
+		<script src="cubeviz/scene.js"></script>
+		<script src="cubeviz/raycaster.js"></script>
+		<script src="cubeviz/renderer.js"></script>
+		<script src="cubeviz/voxelGlow.js"></script>
+		<script src="cubeviz/dataDisplay.js"></script>
 		<script src="cubeviz.js"></script>
 	</body>
 </html>
