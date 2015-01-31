@@ -1,16 +1,22 @@
 class Raycaster
-	constructor: (@scene, @canvas, @camera) ->
-		@raycaster = new THREE.Raycaster(new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0))
-		@projector = new THREE.Projector()
+	_raycaster = null
+	_renderer = null
+	_mouse_vector = new THREE.Vector2(0, 0)
 
-	getIntersected: (event) ->
-		mouse_x = ( event.clientX / @canvas.width ) * 2 - 1
-		mouse_y = - ( event.clientY / @canvas.height ) * 2 + 1
+	constructor: (renderer) ->
+		_renderer = renderer
+		_raycaster = new THREE.Raycaster()
 
-		mouse_vector = new THREE.Vector3(mouse_x, mouse_y, 0.5)
-		@projector.unprojectVector(mouse_vector, @camera)
+		window.addEventListener("mousemove", _onMouseMove, false)
 
-		@raycaster.set(@camera.position, mouse_vector.sub(@camera.position).normalize())
-		return @raycaster.intersectObjects(@scene.children)
+	getIntersected: () ->
+		_raycaster.setFromCamera(_mouse_vector.clone(), _renderer.camera.getThree())
+		_raycaster.intersectObjects(_renderer.camera.visibleObjects())
+
+	_onMouseMove = (e) ->
+		_mouse_vector.set(
+			( e.clientX - _renderer.offsetX()) / _renderer.width() * 2 - 1,
+            -( e.clientY - _renderer.offsetY() ) / _renderer.height() * 2 + 1
+        )
 
 window.Raycaster = Raycaster

@@ -1,11 +1,19 @@
 class VoxelGlow
-	constructor: (camera, @scene) ->
-		@suspended = false
+	_suspended = false
+	_camera = null
+	_mesh = null
+	_suspendTimer = null
+	_controls = null
+
+	constructor: (camera, controls) ->
+		window.glowInstance = @
+		_camera = camera
+		_controls = controls
 		glowUniforms = { 
 			"c":   { type: "f", value: 0.3 }
 			"p":   { type: "f", value: 0.5 }
 			glowColor: { type: "c", value: new THREE.Color(0xffff00) }
-			viewVector: { type: "v3", value: camera.position }
+			viewVector: { type: "v3", value: _camera.position }
 		}
 
 		glowMaterial = new THREE.ShaderMaterial({
@@ -18,20 +26,32 @@ class VoxelGlow
 		})
 
 		glowGeometry = new THREE.BoxGeometry(1.05, 1.05, 1.05)
-		@mesh = new THREE.Mesh(glowGeometry, glowMaterial)
+		_mesh = new THREE.Mesh(glowGeometry, glowMaterial)
+
+		window.addEventListener('DOMMouseScroll', _onMouseWheel, false)
+		window.addEventListener('mousedown', window.glowInstance.pauseGlow, false)
+		window.addEventListener('mouseup', window.glowInstance.resumeGlow, false)
 
 	glowAt: (position) ->
-		if not @suspended
-			@mesh.position.set(position.x, position.y, position.z)
-			@scene.add(@mesh)
+		if not _suspended
+			_mesh.position.set(position.x, position.y, position.z)
+			_camera.addToScene(_mesh)
 
 	stopGlow: () ->
-		@scene.remove(@mesh)
+		_camera.removeFromScene(_mesh)
 
 	pauseGlow: () ->
-		@suspended = true
+		_suspended = true
 
 	resumeGlow: () ->
-		@suspended = false
+		_suspended = false
+		
+	_onMouseWheel = (e) ->
+		clearTimeout(_suspendTimer) if _suspendTimer?
+		window.glowInstance.pauseGlow()
+		window.glowInstance.stopGlow()
+		_suspendTimer = setTimeout(window.glowInstance.resumeGlow, 100)
+		_controls.update()
 
 window.VoxelGlow = VoxelGlow
+window.glowInstance

@@ -1,8 +1,8 @@
-{
+﻿{
   "name": "cubeviz",
   "version": "0.0.1",
   "description": "Visualisation de données en cube",
-  "author": "Ahynn Kryzaal <kryzaal@gmail.com>",
+  "author": "Enzo Sandré <enzo.sandre@gmail.com>",
   "main": "lib/server.js",
   "repository": {
     "type": "git",
